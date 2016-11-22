@@ -54,6 +54,7 @@ private:
     string destination_frame;
     string cloud_destination_topic;
     string scan_destination_topic;
+    bool check_topic_type;
     string laserscan_topics;
 };
 
@@ -80,13 +81,18 @@ void LaserscanMerger::laserscan_topic_parser()
 
 	vector<string> tmp_input_topics;
 
-	for(int i=0;i<tokens.size();++i)
-	{
-	        for(int j=0;j<topics.size();++j)
+	if (check_topic_type == false) {
+	     tmp_input_topics = tokens;
+	}
+	else {
+		for(int i=0;i<tokens.size();++i)
 		{
-			if( (tokens[i].compare(topics[j].name) == 0) && (topics[j].datatype.compare("sensor_msgs/LaserScan") == 0) )
+			for(int j=0;j<topics.size();++j)
 			{
-				tmp_input_topics.push_back(topics[j].name);
+				if( (tokens[i].compare(topics[j].name) == 0) && (topics[j].datatype.compare("sensor_msgs/LaserScan") == 0) )
+				{
+					tmp_input_topics.push_back(topics[j].name);
+				}
 			}
 		}
 	}
@@ -130,9 +136,11 @@ LaserscanMerger::LaserscanMerger()
 	nh.getParam("destination_frame", destination_frame);
 	nh.getParam("cloud_destination_topic", cloud_destination_topic);
 	nh.getParam("scan_destination_topic", scan_destination_topic);
-    nh.getParam("laserscan_topics", laserscan_topics);
+        check_topic_type = true; // to maintain old behaviour is the parameter is not set
+	nh.getParam("check_topic_type", check_topic_type);
+        nh.getParam("laserscan_topics", laserscan_topics);
 
-    this->laserscan_topic_parser();
+        this->laserscan_topic_parser();
 
 	point_cloud_publisher_ = node_.advertise<sensor_msgs::PointCloud2> (cloud_destination_topic.c_str(), 1, false);
 	laser_scan_publisher_ = node_.advertise<sensor_msgs::LaserScan> (scan_destination_topic.c_str(), 1, false);
